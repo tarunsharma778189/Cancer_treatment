@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Appointments - Cancer Treatment Scheduler</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#4F9BFF", secondary: "#6FDCB5" },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <style>
+      :where([class^="ri-"])::before { content: "\f3c2"; }
+      body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f9fafb;
+      }
+      input[type="checkbox"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #d1d5db;
+      border-radius: 4px;
+      position: relative;
+      cursor: pointer;
+      }
+      input[type="checkbox"]:checked {
+      background-color: #4F9BFF;
+      border-color: #4F9BFF;
+      }
+      input[type="checkbox"]:checked::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 6px;
+      width: 6px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      }
+      .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+      }
+      .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      }
+      .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #e5e7eb;
+      transition: .4s;
+      border-radius: 24px;
+      }
+      .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+      }
+      input:checked + .slider {
+      background-color: #4F9BFF;
+      }
+      input:checked + .slider:before {
+      transform: translateX(22px);
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+      }
+      .date-range-picker {
+      position: relative;
+      }
+      .date-range-picker input {
+      cursor: pointer;
+      }
+      .tab-button {
+      position: relative;
+      transition: all 0.3s;
+      }
+      .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #4F9BFF;
+      }
+      .appointment-status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <div class="font-['Pacifico'] text-primary text-2xl">logo</div>
+            <nav class="ml-10 hidden md:flex space-x-8">
+              <a
+                href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/ad8d6c9b-81f9-4104-a79b-359fc0a6f28d"
+                data-readdy="true"
+                class="text-gray-500 hover:text-primary px-1 py-2 text-sm font-medium"
+                >Dashboard</a
+              >
+              <a
+                href="#"
+                class="text-primary border-b-2 border-primary px-1 py-2 text-sm font-medium"
+                >Appointments</a
+              >
+              <a
+                href="#"
+                class="text-gray-500 hover:text-primary px-1 py-2 text-sm font-medium"
+                >Doctors</a
+              >
+              <a
+                href="#"
+                class="text-gray-500 hover:text-primary px-1 py-2 text-sm font-medium"
+                >Equipment</a
+              >
+            </nav>
+          </div>
+          <div class="flex items-center">
+            <div class="flex-shrink-0 relative">
+              <div
+                class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 mr-2"
+              >
+                <i class="ri-notification-3-line"></i>
+              </div>
+              <span
+                class="absolute top-0 right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center"
+                >3</span
+              >
+            </div>
+            <div class="ml-3 relative flex items-center">
+              <img
+                class="h-8 w-8 rounded-full object-cover"
+                src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520a%2520middle-aged%2520woman%2520with%2520short%2520brown%2520hair%252C%2520warm%2520smile%252C%2520wearing%2520a%2520white%2520medical%2520coat%252C%2520neutral%2520background%252C%2520high%2520quality%2520portrait%252C%2520professional%2520lighting&width=200&height=200&seq=user1&orientation=squarish"
+                alt="User profile"
+              />
+              <span
+                class="ml-2 text-sm font-medium text-gray-700 hidden md:block"
+                >Sarah Johnson</span
+              >
+              <div class="w-8 h-8 flex items-center justify-center ml-2">
+                <i class="ri-arrow-down-s-line"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">Appointments</h1>
+        <p class="text-gray-600 mt-1">
+          Manage your scheduled appointments and book new ones
+        </p>
+      </div>
+      <!-- View Toggle Section -->
+      <div class="bg-white rounded shadow-sm mb-6">
+        <div class="flex border-b">
+          <button
+            id="myAppointmentsTab"
+            class="tab-button active flex-1 py-4 px-6 text-center font-medium text-gray-900 hover:bg-gray-50"
+          >
+            My Appointments
+          </button>
+          <button
+            id="availableSlotsTab"
+            class="tab-button flex-1 py-4 px-6 text-center font-medium text-gray-500 hover:bg-gray-50"
+          >
+            Available Slots
+          </button>
+        </div>
+      </div>
+      <!-- My Appointments View -->
+      <div id="myAppointmentsView" class="bg-white rounded shadow-sm p-6 mb-6">
+        <div
+          class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4"
+        >
+          <div class="flex flex-col sm:flex-row gap-4">
+            <!-- Date Range Filter -->
+            <div class="date-range-picker">
+              <div class="relative">
+                <input
+                  type="text"
+                  placeholder="Date range"
+                  class="pl-10 pr-4 py-2 border border-gray-300 rounded text-sm"
+                  value="Apr 22 - May 22, 2025"
+                />
+                <div
+                  class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+                >
+                  <i class="ri-calendar-line"></i>
+                </div>
+              </div>
+            </div>
+            <!-- Doctor Filter -->
+            <div class="relative">
+              <select
+                class="appearance-none pl-10 pr-8 py-2 border border-gray-300 rounded text-sm w-full"
+              >
+                <option>All Doctors</option>
+                <option>Dr. Michael Chen</option>
+                <option>Dr. Emily Rodriguez</option>
+                <option>Dr. Robert Williams</option>
+                <option>Dr. Sarah Kim</option>
+              </select>
+              <div
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+              >
+                <i class="ri-user-line"></i>
+              </div>
+              <div
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+              >
+                <i class="ri-arrow-down-s-line"></i>
+              </div>
+            </div>
+            <!-- Treatment Type Filter -->
+            <div class="relative">
+              <select
+                class="appearance-none pl-10 pr-8 py-2 border border-gray-300 rounded text-sm w-full"
+              >
+                <option>All Treatment Types</option>
+                <option>Radiation Therapy</option>
+                <option>Chemotherapy</option>
+                <option>MRI Scan</option>
+                <option>CT Scan</option>
+                <option>Consultation</option>
+              </select>
+              <div
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+              >
+                <i class="ri-medicine-bottle-line"></i>
+              </div>
+              <div
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+              >
+                <i class="ri-arrow-down-s-line"></i>
+              </div>
+            </div>
+          </div>
+          <!-- New Appointment Button -->
+          <button
+            id="newAppointmentBtn"
+            class="bg-primary text-white px-4 py-2 rounded-button whitespace-nowrap flex items-center justify-center"
+          >
+            <div class="w-4 h-4 flex items-center justify-center mr-2">
+              <i class="ri-add-line"></i>
+            </div>
+            New Appointment
+          </button>
+        </div>
+        <!-- Appointments Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Date/Time
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Treatment Type
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Doctor
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Location
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <!-- Today's appointment -->
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">
+                    Today, 2:30 PM
+                  </div>
+                  <div class="text-xs text-gray-500">Apr 22, 2025</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">Radiation Therapy</div>
+                  <div class="text-xs text-gray-500">30 min session</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <img
+                      class="h-8 w-8 rounded-full object-cover"
+                      src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520a%2520middle-aged%2520male%2520doctor%2520with%2520glasses%252C%2520short%2520dark%2520hair%252C%2520wearing%2520a%2520white%2520coat%252C%2520neutral%2520background%252C%2520high%2520quality%2520portrait%252C%2520professional%2520lighting&width=200&height=200&seq=doctor1&orientation=squarish"
+                      alt="Dr. Michael Chen"
+                    />
+                    <div class="ml-3">
+                      <div class="text-sm font-medium text-gray-900">
+                        Dr. Michael Chen
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        Radiation Oncologist
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">Radiation Oncology</div>
+                  <div class="text-xs text-gray-500">Floor 3, Room 302</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  >
+                    <span
+                      class="appointment-status-indicator bg-green-500"
+                    ></span>
+                    Confirmed
+                  </span>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                >
+                  <div class="flex justify-end space-x-2">
+                    <a
+                      href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/ad8d6c9b-81f9-4104-a79b-359fc0a6f28d"
+                      data-readdy="true"
+                      class="text-primary hover:text-primary-dark px-2 py-1 border border-primary rounded-button whitespace-nowrap"
+                      >View Details</a
+                    >
+                    <button
+                      class="text-gray-600 hover:text-gray-900 px-2 py-1 border border-gray-300 rounded-button whitespace-nowrap"
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      class="text-red-500 hover:text-red-700 px-2 py-1 border border-red-500 rounded-button whitespace-nowrap"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <!-- Upcoming appointment 1 -->
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">
+                    Apr 25, 10:00 AM
+                  </div>
+                  <div class="text-xs text-gray-500">3 days from now</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">MRI Scan</div>
+                  <div class="text-xs text-gray-500">45 min procedure</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <img
+                      class="h-8 w-8 rounded-full object-cover"
+                      src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520a%2520female%2520doctor%2520in%2520her%252040s%2520with%2520shoulder-length%2520brown%2520hair%252C%2520wearing%2520a%2520white%2520coat%252C%2520neutral%2520background%252C%2520high%2520quality%2520portrait%252C%2520professional%2520lighting&width=200&height=200&seq=doctor2&orientation=squarish"
+                      alt="Dr. Emily Rodriguez"
+                    />
+                    <div class="ml-3">
+                      <div class="text-sm font-medium text-gray-900">
+                        Dr. Emily Rodriguez
+                      </div>
+                      <div class="text-xs text-gray-500">Neuro-Oncologist</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">Imaging Center</div>
+                  <div class="text-xs text-gray-500">Floor 2, Room 215</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    <span
+                      class="appointment-status-indicator bg-blue-500"
+                    ></span>
+                    Upcoming
+                  </span>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                >
+                  <div class="flex justify-end space-x-2">
+                    <a
+                      href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/ad8d6c9b-81f9-4104-a79b-359fc0a6f28d"
+                      data-readdy="true"
+                      class="text-primary hover:text-primary-dark px-2 py-1 border border-primary rounded-button whitespace-nowrap"
+                      >View Details</a
+                    >
+                    <button
+                      class="text-gray-600 hover:text-gray-900 px-2 py-1 border border-gray-300 rounded-button whitespace-nowrap"
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      class="text-red-500 hover:text-red-700 px-2 py-1 border border-red-500 rounded-button whitespace-nowrap"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <!-- Upcoming appointment 2 -->
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">
+                    Apr 30, 9:15 AM
+                  </div>
+                  <div class="text-xs text-gray-500">8 days from now</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">Chemotherapy Session</div>
+                  <div class="text-xs text-gray-500">2 hour treatment</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <img
+                      class="h-8 w-8 rounded-full object-cover"
+                      src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520an%2520older%2520male%2520doctor%2520with%2520gray%2520hair%2520and%2520beard%252C%2520wearing%2520a%2520white%2520coat%252C%2520neutral%2520background%252C%2520high%2520quality%2520portrait%252C%2520professional%2520lighting&width=200&height=200&seq=doctor3&orientation=squarish"
+                      alt="Dr. Robert Williams"
+                    />
+                    <div class="ml-3">
+                      <div class="text-sm font-medium text-gray-900">
+                        Dr. Robert Williams
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        Medical Oncologist
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">Oncology Department</div>
+                  <div class="text-xs text-gray-500">Floor 4, Room 412</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    <span
+                      class="appointment-status-indicator bg-blue-500"
+                    ></span>
+                    Upcoming
+                  </span>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                >
+                  <div class="flex justify-end space-x-2">
+                    <a
+                      href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/ad8d6c9b-81f9-4104-a79b-359fc0a6f28d"
+                      data-readdy="true"
+                      class="text-primary hover:text-primary-dark px-2 py-1 border border-primary rounded-button whitespace-nowrap"
+                      >View Details</a
+                    >
+                    <button
+                      class="text-gray-600 hover:text-gray-900 px-2 py-1 border border-gray-300 rounded-button whitespace-nowrap"
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      class="text-red-500 hover:text-red-700 px-2 py-1 border border-red-500 rounded-button whitespace-nowrap"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <!-- Past appointment 1 -->
+              <tr class="hover:bg-gray-50 bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">
+                    Apr 15, 11:30 AM
+                  </div>
+                  <div class="text-xs text-gray-500">7 days ago</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">Consultation</div>
+                  <div class="text-xs text-gray-500">30 min appointment</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <img
+                      class="h-8 w-8 rounded-full object-cover"
+                      src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520a%2520female%2520doctor%2520in%2520her%252030s%2520with%2520black%2520hair%2520in%2520a%2520ponytail%252C%2520wearing%2520a%2520white%2520coat%252C%2520neutral%2520background%252C%2520high%2520quality%2520portrait%252C%2520professional%2520lighting&width=200&height=200&seq=doctor4&orientation=squarish"
+                      alt="Dr. Sarah Kim"
+                    />
+                    <div class="ml-3">
+                      <div class="text-sm font-medium text-gray-900">
+                        Dr. Sarah Kim
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        Surgical Oncologist
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">Consultation Room</div>
+                  <div class="text-xs text-gray-500">Floor 1, Room 105</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                  >
+                    <span
+                      class="appointment-status-indicator bg-gray-500"
+                    ></span>
+                    Completed
+                  </span>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                >
+                  <div class="flex justify-end space-x-2">
+                    <a
+                      href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/ad8d6c9b-81f9-4104-a79b-359fc0a6f28d"
+                      data-readdy="true"
+                      class="text-primary hover:text-primary-dark px-2 py-1 border border-primary rounded-button whitespace-nowrap"
+                      >View Details</a
+                    >
+                    <button
+                      class="text-gray-600 hover:text-gray-900 px-2 py-1 border border-gray-300 rounded-button whitespace-nowrap"
+                    >
+                      Book Follow-up
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <!-- Past appointment 2 -->
+              <tr class="hover:bg-gray-50 bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">
+                    Apr 8, 2:00 PM
+                  </div>
+                  <div class="text-xs text-gray-500">14 days ago</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">CT Scan</div>
+                  <div class="text-xs text-gray-500">30 min procedure</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <img
+                      class="h-8 w-8 rounded-full object-cover"
+                      src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520a%2520middle-aged%2520male%2520doctor%2520with%2520glasses%252C%2520short%2520dark%2520hair%252C%2520wearing%2520a%2520white%2520coat%252C%2520neutral%2520background%252C%2520high%2520quality%2520portrait%252C%2520professional%2520lighting&width=200&height=200&seq=doctor1&orientation=squarish"
+                      alt="Dr. Michael Chen"
+                    />
+                    <div class="ml-3">
+                      <div class="text-sm font-medium text-gray-900">
+                        Dr. Michael Chen
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        Radiation Oncologist
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">Imaging Center</div>
+                  <div class="text-xs text-gray-500">Floor 2, Room 210</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                  >
+                    <span
+                      class="appointment-status-indicator bg-gray-500"
+                    ></span>
+                    Completed
+                  </span>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                >
+                  <div class="flex justify-end space-x-2">
+                    <a
+                      href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/ad8d6c9b-81f9-4104-a79b-359fc0a6f28d"
+                      data-readdy="true"
+                      class="text-primary hover:text-primary-dark px-2 py-1 border border-primary rounded-button whitespace-nowrap"
+                      >View Details</a
+                    >
+                    <button
+                      class="text-gray-600 hover:text-gray-900 px-2 py-1 border border-gray-300 rounded-button whitespace-nowrap"
+                    >
+                      Book Follow-up
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Pagination -->
+          <div
+            class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6 mt-4"
+          >
+            <div class="flex flex-1 justify-between sm:hidden">
+              <button
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-button text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-button text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+            <div
+              class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between"
+            >
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing <span class="font-medium">1</span> to
+                  <span class="font-medium">5</span> of
+                  <span class="font-medium">12</span> appointments
+                </p>
+              </div>
+              <div>
+                <nav
+                  class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                  aria-label="Pagination"
+                >
+                  <button
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    <span class="sr-only">Previous</span>
+                    <div class="w-5 h-5 flex items-center justify-center">
+                      <i class="ri-arrow-left-s-line"></i>
+                    </div>
+                  </button>
+                  <button
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-primary text-sm font-medium text-white"
+                  >
+                    1
+                  </button>
+                  <button
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    2
+                  </button>
+                  <button
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    3
+                  </button>
+                  <button
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    <span class="sr-only">Next</span>
+                    <div class="w-5 h-5 flex items-center justify-center">
+                      <i class="ri-arrow-right-s-line"></i>
+                    </div>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Available Slots View (Hidden by default) -->
+      <div id="availableSlotsView" class="hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Calendar and Filters -->
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded shadow-sm p-6 mb-6">
+              <!-- Calendar Controls -->
+              <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-2">
+                  <button
+                    class="bg-primary text-white px-3 py-1 rounded-button text-sm whitespace-nowrap"
+                  >
+                    Today
+                  </button>
+                  <div class="flex">
+                    <button class="p-1 rounded-full hover:bg-gray-100">
+                      <div class="w-6 h-6 flex items-center justify-center">
+                        <i class="ri-arrow-left-s-line"></i>
+                      </div>
+                    </button>
+                    <button class="p-1 rounded-full hover:bg-gray-100">
+                      <div class="w-6 h-6 flex items-center justify-center">
+                        <i class="ri-arrow-right-s-line"></i>
+                      </div>
+                    </button>
+                  </div>
+                  <h3 class="text-lg font-medium text-gray-900">April 2025</h3>
+                </div>
+                <div class="flex space-x-2">
+                  <button
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded-button text-sm whitespace-nowrap"
+                  >
+                    Month
+                  </button>
+                  <button
+                    class="px-3 py-1 bg-primary text-white rounded-button text-sm whitespace-nowrap"
+                  >
+                    Week
+                  </button>
+                  <button
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded-button text-sm whitespace-nowrap"
+                  >
+                    Day
+                  </button>
+                </div>
+              </div>
+              <!-- Week View Calendar -->
+              <div class="overflow-x-auto">
+                <div class="min-w-full">
+                  <!-- Days of week header -->
+                  <div class="grid grid-cols-7 gap-1 mb-2">
+                    <div class="text-center">
+                      <div class="text-sm font-medium text-gray-500">Sun</div>
+                      <div class="text-lg font-medium text-gray-900 mt-1">
+                        20
+                      </div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-sm font-medium text-gray-500">Mon</div>
+                      <div class="text-lg font-medium text-gray-900 mt-1">
+                        21
+                      </div>
+                    </div>
+                    <div class="text-center bg-blue-50 rounded-t py-1">
+                      <div class="text-sm font-medium text-primary">Tue</div>
+                      <div class="text-lg font-medium text-primary mt-1">
+                        22
+                      </div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-sm font-medium text-gray-500">Wed</div>
+                      <div class="text-lg font-medium text-gray-900 mt-1">
+                        23
+                      </div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-sm font-medium text-gray-500">Thu</div>
+                      <div class="text-lg font-medium text-gray-900 mt-1">
+                        24
+                      </div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-sm font-medium text-gray-500">Fri</div>
+                      <div class="text-lg font-medium text-gray-900 mt-1">
+                        25
+                      </div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-sm font-medium text-gray-500">Sat</div>
+                      <div class="text-lg font-medium text-gray-900 mt-1">
+                        26
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Time slots grid -->
+                  <div
+                    class="relative min-h-[600px] border-t border-l border-gray-200"
+                  >
+                    <!-- Time indicators -->
+                    <div
+                      class="absolute left-0 top-0 w-16 h-full flex flex-col border-r border-gray-200"
+                    >
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        8:00 AM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        9:00 AM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        10:00 AM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        11:00 AM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        12:00 PM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        1:00 PM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        2:00 PM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        3:00 PM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        4:00 PM
+                      </div>
+                      <div
+                        class="h-12 text-xs text-gray-500 text-right pr-2 pt-1"
+                      >
+                        5:00 PM
+                      </div>
+                    </div>
+                    <!-- Calendar grid -->
+                    <div class="ml-16 grid grid-cols-7 h-full">
+                      <!-- Sunday -->
+                      <div class="border-r border-b border-gray-200 relative">
+                        <div
+                          class="absolute top-24 left-1 right-1 h-12 bg-gray-100 rounded px-2 py-1 text-xs"
+                        >
+                          <div class="font-medium">No availability</div>
+                        </div>
+                      </div>
+                      <!-- Monday -->
+                      <div class="border-r border-b border-gray-200 relative">
+                        <div
+                          class="absolute top-12 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Rodriguez</div>
+                          <div>Consultation</div>
+                        </div>
+                        <div
+                          class="absolute top-60 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Williams</div>
+                          <div>Chemotherapy</div>
+                        </div>
+                      </div>
+                      <!-- Tuesday (Today) -->
+                      <div
+                        class="border-r border-b border-gray-200 bg-blue-50 relative"
+                      >
+                        <div
+                          class="absolute top-0 left-1 right-1 h-12 bg-gray-100 rounded px-2 py-1 text-xs"
+                        >
+                          <div class="font-medium">Booked</div>
+                        </div>
+                        <div
+                          class="absolute top-36 left-1 right-1 h-12 bg-primary rounded px-2 py-1 text-xs text-white"
+                        >
+                          <div class="font-medium">Dr. Chen</div>
+                          <div>Radiation Therapy</div>
+                        </div>
+                        <div
+                          class="absolute top-72 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Kim</div>
+                          <div>Consultation</div>
+                        </div>
+                      </div>
+                      <!-- Wednesday -->
+                      <div class="border-r border-b border-gray-200 relative">
+                        <div
+                          class="absolute top-24 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Chen</div>
+                          <div>Radiation Therapy</div>
+                        </div>
+                        <div
+                          class="absolute top-48 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Williams</div>
+                          <div>Consultation</div>
+                        </div>
+                      </div>
+                      <!-- Thursday -->
+                      <div class="border-r border-b border-gray-200 relative">
+                        <div
+                          class="absolute top-12 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Rodriguez</div>
+                          <div>MRI Scan</div>
+                        </div>
+                        <div
+                          class="absolute top-84 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Kim</div>
+                          <div>Consultation</div>
+                        </div>
+                      </div>
+                      <!-- Friday -->
+                      <div class="border-r border-b border-gray-200 relative">
+                        <div
+                          class="absolute top-24 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Rodriguez</div>
+                          <div>MRI Scan</div>
+                        </div>
+                        <div
+                          class="absolute top-60 left-1 right-1 h-12 bg-green-50 rounded px-2 py-1 text-xs border-l-4 border-secondary cursor-pointer"
+                        >
+                          <div class="font-medium">Dr. Chen</div>
+                          <div>Radiation Therapy</div>
+                        </div>
+                      </div>
+                      <!-- Saturday -->
+                      <div class="border-r border-b border-gray-200 relative">
+                        <div
+                          class="absolute top-36 left-1 right-1 h-12 bg-gray-100 rounded px-2 py-1 text-xs"
+                        >
+                          <div class="font-medium">Limited availability</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Quick Filters -->
+            <div class="bg-white rounded shadow-sm p-6">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">
+                Quick Filters
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Treatment Type Filter -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2"
+                    >Treatment Type</label
+                  >
+                  <div class="space-y-2">
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="radiation"
+                        class="mr-2"
+                        checked
+                      />
+                      <label for="radiation" class="text-sm text-gray-700"
+                        >Radiation Therapy</label
+                      >
+                    </div>
+                    <div class="flex items-center">
+                      <input type="checkbox" id="chemo" class="mr-2" checked />
+                      <label for="chemo" class="text-sm text-gray-700"
+                        >Chemotherapy</label
+                      >
+                    </div>
+                    <div class="flex items-center">
+                      <input type="checkbox" id="mri" class="mr-2" checked />
+                      <label for="mri" class="text-sm text-gray-700"
+                        >MRI Scan</label
+                      >
+                    </div>
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="consultation"
+                        class="mr-2"
+                        checked
+                      />
+                      <label for="consultation" class="text-sm text-gray-700"
+                        >Consultation</label
+                      >
+                    </div>
+                  </div>
+                </div>
+                <!-- Doctor Filter -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2"
+                    >Doctor</label
+                  >
+                  <div class="space-y-2">
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="dr-chen"
+                        class="mr-2"
+                        checked
+                      />
+                      <label for="dr-chen" class="text-sm text-gray-700"
+                        >Dr. Michael Chen</label
+                      >
+                    </div>
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="dr-rodriguez"
+                        class="mr-2"
+                        checked
+                      />
+                      <label for="dr-rodriguez" class="text-sm text-gray-700"
+                        >Dr. Emily Rodriguez</label
+                      >
+                    </div>
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="dr-williams"
+                        class="mr-2"
+                        checked
+                      />
+                      <label for="dr-williams" class="text-sm text-gray-700"
+                        >Dr. Robert Williams</label
+                      >
+                    </div>
+                    <div class="flex items-center">
+                      <input type="checkbox" id="dr-kim" class="mr-2" checked />
+                      <label for="dr-kim" class="text-sm text-gray-700"
+                        >Dr. Sarah Kim</label
+                      >
+                    </div>
+                  </div>
+                </div>
+                <!-- Time of Day Filter -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2"
+                    >Time of Day</label
+                  >
+                  <div class="space-y-2">
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="morning"
+                        class="mr-2"
+                        checked
+                      />
+                      <label for="morning" class="text-sm text-gray-700"
+                        >Morning (8AM - 12PM)</label
+                      >
+                    </div>
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="afternoon"
+                        class="mr-2"
+                        checked
+                      />
+                      <label for="afternoon" class="text-sm text-gray-700"
+                        >Afternoon (12PM - 4PM)</label
+                      >
+                    </div>
+                    <div class="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="evening"
+                        class="mr-2"
+                        checked
+                      />
+                      <label for="evening" class="text-sm text-gray-700"
+                        >Evening (4PM - 6PM)</label
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 flex justify-end">
+                <button
+                  class="bg-primary text-white px-4 py-2 rounded-button whitespace-nowrap"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Slot Details Panel -->
+          <div class="lg:col-span-1">
+            <div class="bg-white rounded shadow-sm p-6 sticky top-24">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">
+                Slot Details
+              </h3>
+              <div class="mb-6">
+                <div class="text-sm text-gray-500">Selected Date & Time</div>
+                <div class="text-xl font-medium text-gray-900 mt-1">
+                  Tuesday, Apr 22, 2025
+                </div>
+                <div class="text-lg text-gray-700">2:30 PM - 3:00 PM</div>
+              </div>
+              <div class="mb-6">
+                <div class="text-sm text-gray-500">Doctor</div>
+                <div class="flex items-center mt-2">
+                  <img
+                    class="h-12 w-12 rounded-full object-cover"
+                    src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520a%2520middle-aged%2520male%2520doctor%2520with%2520glasses%252C%2520short%2520dark%2520hair%252C%2520wearing%2520a%2520white%2520coat%252C%2520neutral%2520background%252C%2520high%2520quality%2520portrait%252C%2520professional%2520lighting&width=200&height=200&seq=doctor1&orientation=squarish"
+                    alt="Dr. Michael Chen"
+                  />
+                  <div class="ml-3">
+                    <div class="text-md font-medium text-gray-900">
+                      Dr. Michael Chen
+                    </div>
+                    <div class="text-sm text-gray-600">
+                      Radiation Oncologist
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-6">
+                <div class="text-sm text-gray-500">Treatment Type</div>
+                <div class="text-md font-medium text-gray-900 mt-1">
+                  Radiation Therapy
+                </div>
+                <div class="text-sm text-gray-600">30 minute session</div>
+              </div>
+              <div class="mb-6">
+                <div class="text-sm text-gray-500">Location</div>
+                <div class="text-md font-medium text-gray-900 mt-1">
+                  Radiation Oncology
+                </div>
+                <div class="text-sm text-gray-600">Floor 3, Room 302</div>
+              </div>
+              <div class="mb-6">
+                <div class="text-sm text-gray-500">Equipment</div>
+                <div class="text-md font-medium text-gray-900 mt-1">
+                  Linear Accelerator
+                </div>
+                <div class="text-sm text-gray-600">Varian TrueBeam</div>
+              </div>
+              <div class="flex flex-col space-y-3">
+                <a
+                  href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/ad8d6c9b-81f9-4104-a79b-359fc0a6f28d"
+                  data-readdy="true"
+                  class="bg-primary text-white px-4 py-2 rounded-button whitespace-nowrap text-center"
+                  >Book Appointment</a
+                >
+                <button
+                  class="border border-gray-300 text-gray-700 px-4 py-2 rounded-button whitespace-nowrap"
+                >
+                  View More Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- New Appointment Modal -->
+    <div
+      id="newAppointmentModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    >
+      <div class="bg-white rounded-lg w-full max-w-md mx-4 overflow-hidden">
+        <div class="px-6 py-4 bg-primary text-white">
+          <h3 class="text-lg font-medium">Book New Appointment</h3>
+        </div>
+        <div class="p-6">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Appointment Type</label
+            >
+            <div class="relative">
+              <select
+                class="appearance-none w-full bg-white border border-gray-300 rounded text-gray-700 py-2 px-3 pr-8"
+              >
+                <option>Select appointment type</option>
+                <option>Radiation Therapy</option>
+                <option>Chemotherapy</option>
+                <option>MRI Scan</option>
+                <option>CT Scan</option>
+                <option>Consultation</option>
+              </select>
+              <div
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+              >
+                <i class="ri-arrow-down-s-line"></i>
+              </div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Select Doctor</label
+            >
+            <div class="relative">
+              <select
+                class="appearance-none w-full bg-white border border-gray-300 rounded text-gray-700 py-2 px-3 pr-8"
+              >
+                <option>Select doctor</option>
+                <option>Dr. Michael Chen</option>
+                <option>Dr. Emily Rodriguez</option>
+                <option>Dr. Robert Williams</option>
+                <option>Dr. Sarah Kim</option>
+              </select>
+              <div
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+              >
+                <i class="ri-arrow-down-s-line"></i>
+              </div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Equipment Required</label
+            >
+            <div class="relative">
+              <select
+                class="appearance-none w-full bg-white border border-gray-300 rounded text-gray-700 py-2 px-3 pr-8"
+              >
+                <option>Select equipment (if needed)</option>
+                <option>MRI Machine (Siemens MAGNETOM Vida 3T)</option>
+                <option>Linear Accelerator (Varian TrueBeam)</option>
+                <option>PET-CT Scanner (GE Discovery IQ)</option>
+                <option>None</option>
+              </select>
+              <div
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+              >
+                <i class="ri-arrow-down-s-line"></i>
+              </div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Preferred Date</label
+            >
+            <div class="relative">
+              <input
+                type="text"
+                placeholder="Select date"
+                class="w-full border border-gray-300 rounded px-3 py-2 text-gray-700 text-sm pr-8"
+              />
+              <div
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-500"
+              >
+                <i class="ri-calendar-line ri-lg"></i>
+              </div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Preferred Time</label
+            >
+            <div class="grid grid-cols-2 gap-2">
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id="morning-pref"
+                  class="mr-2"
+                  onchange="handleMorningPrefChange(this)"
+                />
+                <label for="morning-pref" class="text-sm text-gray-700"
+                  >Morning</label
+                >
+              </div>
+              <div class="flex items-center">
+                <input type="checkbox" id="afternoon-pref" class="mr-2" />
+                <label for="afternoon-pref" class="text-sm text-gray-700"
+                  >Afternoon</label
+                >
+              </div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Additional Notes</label
+            >
+            <textarea
+              class="w-full border border-gray-300 rounded px-3 py-2 text-gray-700 text-sm"
+              rows="3"
+              placeholder="Any special requirements or information for the doctor..."
+            ></textarea>
+          </div>
+          <div class="mb-4 flex items-center">
+            <input type="checkbox" id="reminder-new" class="mr-2" />
+            <label for="reminder-new" class="text-sm text-gray-700"
+              >Send me a reminder 24 hours before appointment</label
+            >
+          </div>
+          <div class="flex justify-end space-x-3 mt-6">
+            <button
+              id="closeNewAppointmentModal"
+              class="px-4 py-2 border border-gray-300 text-gray-700 !rounded-button whitespace-nowrap"
+            >
+              Cancel
+            </button>
+            <a
+              href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/b21d7803-8bb2-444d-a409-8adc2de74514"
+              data-readdy="true"
+              class="px-4 py-2 bg-primary text-white !rounded-button whitespace-nowrap inline-block"
+              >Find Available Slots</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Tab switching
+        const myAppointmentsTab = document.getElementById("myAppointmentsTab");
+        const availableSlotsTab = document.getElementById("availableSlotsTab");
+        const myAppointmentsView = document.getElementById("myAppointmentsView");
+        const availableSlotsView = document.getElementById("availableSlotsView");
+        myAppointmentsTab.addEventListener("click", function () {
+          myAppointmentsTab.classList.add("active");
+          availableSlotsTab.classList.remove("active");
+          myAppointmentsView.classList.remove("hidden");
+          availableSlotsView.classList.add("hidden");
+        });
+        availableSlotsTab.addEventListener("click", function () {
+          availableSlotsTab.classList.add("active");
+          myAppointmentsTab.classList.remove("active");
+          availableSlotsView.classList.remove("hidden");
+          myAppointmentsView.classList.add("hidden");
+        });
+      });
+      document.addEventListener("DOMContentLoaded", function () {
+        // New Appointment Modal
+        const newAppointmentBtn = document.getElementById("newAppointmentBtn");
+        const newAppointmentModal = document.getElementById("newAppointmentModal");
+        const closeNewAppointmentModal = document.getElementById(
+          "closeNewAppointmentModal",
+        );
+        let formData = {
+          morningPreference: false,
+        };
+        window.handleMorningPrefChange = function (checkbox) {
+          formData.morningPreference = checkbox.checked;
+        };
+        newAppointmentBtn.addEventListener("click", function () {
+          newAppointmentModal.classList.remove("hidden");
+        });
+        closeNewAppointmentModal.addEventListener("click", function () {
+          newAppointmentModal.classList.add("hidden");
+        });
+        // Close modal when clicking outside
+        newAppointmentModal.addEventListener("click", function (e) {
+          if (e.target === newAppointmentModal) {
+            newAppointmentModal.classList.add("hidden");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
