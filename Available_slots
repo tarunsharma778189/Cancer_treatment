@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Available Appointment Slots - Cancer Treatment Scheduler</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#4F9BFF", secondary: "#6FDCB5" },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <style>
+      :where([class^="ri-"])::before { content: "\f3c2"; }
+      body {
+          font-family: 'Poppins', sans-serif;
+          background-color: #f9fafb;
+      }
+      input[type="checkbox"] {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border: 2px solid #d1d5db;
+          border-radius: 4px;
+          position: relative;
+          cursor: pointer;
+      }
+      input[type="checkbox"]:checked {
+          background-color: #4F9BFF;
+          border-color: #4F9BFF;
+      }
+      input[type="checkbox"]:checked::after {
+          content: "";
+          position: absolute;
+          top: 2px;
+          left: 6px;
+          width: 6px;
+          height: 10px;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+      }
+      .switch {
+          position: relative;
+          display: inline-block;
+          width: 46px;
+          height: 24px;
+      }
+      .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+      .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #e5e7eb;
+          transition: .4s;
+          border-radius: 24px;
+      }
+      .slider:before {
+          position: absolute;
+          content: "";
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+      }
+      input:checked + .slider {
+          background-color: #4F9BFF;
+      }
+      input:checked + .slider:before {
+          transform: translateX(22px);
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+      }
+      .date-range-picker {
+          position: relative;
+      }
+      .date-range-picker input {
+          cursor: pointer;
+      }
+      .tab-button {
+          position: relative;
+          transition: all 0.3s;
+      }
+      .tab-button.active::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          width: 100%;
+          height: 2px;
+          background-color: #4F9BFF;
+      }
+      .appointment-status-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          display: inline-block;
+          margin-right: 6px;
+      }
+      .time-slot {
+          transition: all 0.2s ease;
+      }
+      .time-slot:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      .time-slot.selected {
+          border-color: #4F9BFF;
+          background-color: rgba(79, 155, 255, 0.1);
+      }
+      .calendar-grid {
+          display: grid;
+          grid-template-columns: 60px repeat(7, 1fr);
+          grid-auto-rows: 60px;
+      }
+      .calendar-grid-header {
+          display: grid;
+          grid-template-columns: 60px repeat(7, 1fr);
+      }
+      .calendar-time-marker {
+          position: absolute;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background-color: #ef4444;
+          z-index: 10;
+      }
+      .calendar-time-marker::before {
+          content: '';
+          position: absolute;
+          left: -5px;
+          top: -4px;
+          width: 10px;
+          height: 10px;
+          background-color: #ef4444;
+          border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <div class="font-['Pacifico'] text-primary text-2xl">logo</div>
+            <nav class="ml-10 hidden md:flex space-x-8">
+              <a
+                href="#"
+                class="text-gray-500 hover:text-primary px-1 py-2 text-sm font-medium"
+                >Dashboard</a
+              >
+              <a
+                href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/23bbf480-418e-4b55-b362-bf9869eab570"
+                data-readdy="true"
+                class="text-primary border-b-2 border-primary px-1 py-2 text-sm font-medium"
+                >Appointments</a
+              >
+              <a
+                href="#"
+                class="text-gray-500 hover:text-primary px-1 py-2 text-sm font-medium"
+                >Doctors</a
+              >
+              <a
+                href="#"
+                class="text-gray-500 hover:text-primary px-1 py-2 text-sm font-medium"
+                >Equipment</a
+              >
+            </nav>
+          </div>
+          <div class="flex items-center">
+            <div class="flex-shrink-0 relative">
+              <div
+                class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 mr-2"
+              >
+                <i class="ri-notification-3-line"></i>
+              </div>
+              <span
+                class="absolute top-0 right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center"
+                >3</span
+              >
+            </div>
+            <div class="ml-3 relative flex items-center">
+              <img
+                class="h-8 w-8 rounded-full object-cover"
+                src="https://readdy.ai/api/search-image?query=professional%252520headshot%252520of%252520a%252520middle-aged%252520woman%252520with%252520short%252520brown%252520hair%25252C%252520warm%252520smile%25252C%252520wearing%252520a%252520white%252520medical%252520coat%25252C%252520neutral%252520background%25252C%252520high%252520quality%252520portrait%25252C%252520professional%252520lighting&width=200&height=200&seq=user1&orientation=squarish"
+                alt="User profile"
+              />
+              <span
+                class="ml-2 text-sm font-medium text-gray-700 hidden md:block"
+                >Sarah Johnson</span
+              >
+              <div class="w-8 h-8 flex items-center justify-center ml-2">
+                <i class="ri-arrow-down-s-line"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="flex items-center mb-6">
+        <a
+          href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/23bbf480-418e-4b55-b362-bf9869eab570"
+          data-readdy="true"
+          class="flex items-center text-gray-500 hover:text-primary mr-4"
+        >
+          <div class="w-5 h-5 flex items-center justify-center">
+            <i class="ri-arrow-left-line"></i>
+          </div>
+          <span class="ml-1">Back</span>
+        </a>
+        <div>
+          <h1 class="text-2xl font-semibold text-gray-900">
+            Available Appointment Slots
+          </h1>
+          <p class="text-gray-600 mt-1">
+            Choose a convenient time for your Radiation Therapy with Dr. Michael
+            Chen
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Calendar and Time Slots -->
+        <div class="lg:col-span-2">
+          <!-- Calendar Controls -->
+          <div class="bg-white rounded shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center space-x-2">
+                <button
+                  class="bg-primary text-white px-3 py-1 rounded-button text-sm whitespace-nowrap"
+                >
+                  Today
+                </button>
+                <div class="flex">
+                  <button class="p-1 rounded-full hover:bg-gray-100">
+                    <div class="w-6 h-6 flex items-center justify-center">
+                      <i class="ri-arrow-left-s-line"></i>
+                    </div>
+                  </button>
+                  <button class="p-1 rounded-full hover:bg-gray-100">
+                    <div class="w-6 h-6 flex items-center justify-center">
+                      <i class="ri-arrow-right-s-line"></i>
+                    </div>
+                  </button>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900">
+                  April 22 - 28, 2025
+                </h3>
+              </div>
+              <div class="flex space-x-2">
+                <button
+                  class="px-3 py-1 bg-gray-100 text-gray-700 rounded-button text-sm whitespace-nowrap"
+                >
+                  Month
+                </button>
+                <button
+                  class="px-3 py-1 bg-primary text-white rounded-button text-sm whitespace-nowrap"
+                >
+                  Week
+                </button>
+                <button
+                  class="px-3 py-1 bg-gray-100 text-gray-700 rounded-button text-sm whitespace-nowrap"
+                >
+                  Day
+                </button>
+              </div>
+            </div>
+
+            <!-- Week View Calendar -->
+            <div class="overflow-x-auto">
+              <!-- Days of week header -->
+              <div class="calendar-grid-header mb-2">
+                <div class="text-sm font-medium text-gray-500"></div>
+                <div class="text-center">
+                  <div class="text-sm font-medium text-gray-500">Sun</div>
+                  <div class="text-lg font-medium text-gray-900 mt-1">22</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-sm font-medium text-gray-500">Mon</div>
+                  <div class="text-lg font-medium text-gray-900 mt-1">23</div>
+                </div>
+                <div class="text-center bg-blue-50 rounded-t py-1">
+                  <div class="text-sm font-medium text-primary">Tue</div>
+                  <div class="text-lg font-medium text-primary mt-1">24</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-sm font-medium text-gray-500">Wed</div>
+                  <div class="text-lg font-medium text-gray-900 mt-1">25</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-sm font-medium text-gray-500">Thu</div>
+                  <div class="text-lg font-medium text-gray-900 mt-1">26</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-sm font-medium text-gray-500">Fri</div>
+                  <div class="text-lg font-medium text-gray-900 mt-1">27</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-sm font-medium text-gray-500">Sat</div>
+                  <div class="text-lg font-medium text-gray-900 mt-1">28</div>
+                </div>
+              </div>
+
+              <!-- Calendar grid -->
+              <div class="relative border border-gray-200 rounded">
+                <div class="calendar-grid">
+                  <!-- Time labels -->
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    8:00 AM
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50 relative"
+                  >
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Chen</div>
+                      <div>Radiation Therapy</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Chen</div>
+                      <div>Radiation Therapy</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    9:00 AM
+                  </div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Rodriguez</div>
+                      <div>MRI Scan</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50"
+                  ></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Williams</div>
+                      <div>Consultation</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    10:00 AM
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Kim</div>
+                      <div>Consultation</div>
+                    </div>
+                  </div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50 relative"
+                  >
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot selected"
+                    >
+                      <div class="font-medium">Dr. Chen</div>
+                      <div>Radiation Therapy</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Rodriguez</div>
+                      <div>MRI Scan</div>
+                    </div>
+                  </div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    11:00 AM
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50"
+                  ></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Chen</div>
+                      <div>Radiation Therapy</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    12:00 PM
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50"
+                  ></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Williams</div>
+                      <div>Chemotherapy</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    1:00 PM
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Kim</div>
+                      <div>Consultation</div>
+                    </div>
+                  </div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50"
+                  ></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Chen</div>
+                      <div>Radiation Therapy</div>
+                    </div>
+                  </div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    2:00 PM
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50 relative"
+                  >
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Chen</div>
+                      <div>Radiation Therapy</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Rodriguez</div>
+                      <div>MRI Scan</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    3:00 PM
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Williams</div>
+                      <div>Chemotherapy</div>
+                    </div>
+                  </div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50"
+                  ></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Kim</div>
+                      <div>Consultation</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-b border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    4:00 PM
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div
+                    class="border-r border-b border-gray-200 bg-blue-50 relative"
+                  >
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Chen</div>
+                      <div>Radiation Therapy</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200"></div>
+                  <div class="border-r border-b border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Rodriguez</div>
+                      <div>MRI Scan</div>
+                    </div>
+                  </div>
+                  <div class="border-b border-gray-200"></div>
+
+                  <div
+                    class="border-r border-gray-200 text-xs text-gray-500 pr-2 pt-2 text-right"
+                  >
+                    5:00 PM
+                  </div>
+                  <div class="border-r border-gray-200"></div>
+                  <div class="border-r border-gray-200"></div>
+                  <div class="border-r border-gray-200 bg-blue-50"></div>
+                  <div class="border-r border-gray-200 relative">
+                    <div
+                      class="absolute inset-1 bg-green-50 rounded border-l-4 border-secondary p-1 text-xs cursor-pointer time-slot"
+                    >
+                      <div class="font-medium">Dr. Chen</div>
+                      <div>Radiation Therapy</div>
+                    </div>
+                  </div>
+                  <div class="border-r border-gray-200"></div>
+                  <div class="border-r border-gray-200"></div>
+                  <div class="border-gray-200"></div>
+                </div>
+
+                <!-- Current time marker (positioned at 10:30 AM) -->
+                <div class="calendar-time-marker" style="top: 150px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Available Time Slots -->
+          <div class="bg-white rounded shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+              Available Time Slots on Tuesday, Apr 24
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div
+                class="border border-gray-200 rounded p-3 time-slot cursor-pointer"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-gray-900"
+                    >8:00 AM - 8:30 AM</span
+                  >
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  >
+                    Available
+                  </span>
+                </div>
+                <div class="flex items-center mb-1">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-user-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Dr. Michael Chen</span>
+                </div>
+                <div class="flex items-center mb-1">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-medicine-bottle-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Radiation Therapy</span>
+                </div>
+                <div class="flex items-center">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-map-pin-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Floor 3, Room 302</span>
+                </div>
+              </div>
+
+              <div
+                class="border border-gray-200 rounded p-3 time-slot cursor-pointer selected"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-gray-900"
+                    >10:00 AM - 10:30 AM</span
+                  >
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  >
+                    Available
+                  </span>
+                </div>
+                <div class="flex items-center mb-1">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-user-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Dr. Michael Chen</span>
+                </div>
+                <div class="flex items-center mb-1">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-medicine-bottle-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Radiation Therapy</span>
+                </div>
+                <div class="flex items-center">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-map-pin-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Floor 3, Room 302</span>
+                </div>
+              </div>
+
+              <div
+                class="border border-gray-200 rounded p-3 time-slot cursor-pointer"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-gray-900"
+                    >2:00 PM - 2:30 PM</span
+                  >
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  >
+                    Available
+                  </span>
+                </div>
+                <div class="flex items-center mb-1">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-user-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Dr. Michael Chen</span>
+                </div>
+                <div class="flex items-center mb-1">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-medicine-bottle-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Radiation Therapy</span>
+                </div>
+                <div class="flex items-center">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-map-pin-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Floor 3, Room 302</span>
+                </div>
+              </div>
+
+              <div
+                class="border border-gray-200 rounded p-3 time-slot cursor-pointer"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-gray-900"
+                    >4:00 PM - 4:30 PM</span
+                  >
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  >
+                    Available
+                  </span>
+                </div>
+                <div class="flex items-center mb-1">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-user-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Dr. Michael Chen</span>
+                </div>
+                <div class="flex items-center mb-1">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-medicine-bottle-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Radiation Therapy</span>
+                </div>
+                <div class="flex items-center">
+                  <div
+                    class="w-4 h-4 flex items-center justify-center text-primary mr-1"
+                  >
+                    <i class="ri-map-pin-line"></i>
+                  </div>
+                  <span class="text-sm text-gray-700">Floor 3, Room 302</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Panel and Selected Slot Details -->
+        <div class="lg:col-span-1">
+          <!-- Filter Panel -->
+          <div class="bg-white rounded shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium text-gray-900">Filter Options</h3>
+              <button class="text-primary text-sm">Reset</button>
+            </div>
+
+            <!-- Treatment Type Filters -->
+            <div class="mb-5">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">
+                Treatment Type
+              </h4>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <input type="checkbox" id="radiation" class="mr-2" checked />
+                  <label for="radiation" class="text-sm text-gray-700"
+                    >Radiation Therapy</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="chemo" class="mr-2" />
+                  <label for="chemo" class="text-sm text-gray-700"
+                    >Chemotherapy</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="mri" class="mr-2" />
+                  <label for="mri" class="text-sm text-gray-700"
+                    >MRI Scan</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="consultation" class="mr-2" />
+                  <label for="consultation" class="text-sm text-gray-700"
+                    >Consultation</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Doctor Filters -->
+            <div class="mb-5">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Doctor</h4>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <input type="checkbox" id="dr-chen" class="mr-2" checked />
+                  <label for="dr-chen" class="text-sm text-gray-700"
+                    >Dr. Michael Chen</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="dr-rodriguez" class="mr-2" />
+                  <label for="dr-rodriguez" class="text-sm text-gray-700"
+                    >Dr. Emily Rodriguez</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="dr-williams" class="mr-2" />
+                  <label for="dr-williams" class="text-sm text-gray-700"
+                    >Dr. Robert Williams</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="dr-kim" class="mr-2" />
+                  <label for="dr-kim" class="text-sm text-gray-700"
+                    >Dr. Sarah Kim</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Time Preference Filters -->
+            <div class="mb-5">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">
+                Time Preference
+              </h4>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <input type="checkbox" id="morning" class="mr-2" checked />
+                  <label for="morning" class="text-sm text-gray-700"
+                    >Morning (8AM - 12PM)</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="afternoon" class="mr-2" checked />
+                  <label for="afternoon" class="text-sm text-gray-700"
+                    >Afternoon (12PM - 4PM)</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="evening" class="mr-2" />
+                  <label for="evening" class="text-sm text-gray-700"
+                    >Evening (4PM - 6PM)</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Location Filters -->
+            <div class="mb-5">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Location</h4>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="radiation-dept"
+                    class="mr-2"
+                    checked
+                  />
+                  <label for="radiation-dept" class="text-sm text-gray-700"
+                    >Radiation Oncology</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="imaging" class="mr-2" />
+                  <label for="imaging" class="text-sm text-gray-700"
+                    >Imaging Center</label
+                  >
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="oncology" class="mr-2" />
+                  <label for="oncology" class="text-sm text-gray-700"
+                    >Oncology Department</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="w-full bg-primary text-white px-4 py-2 rounded-button whitespace-nowrap"
+            >
+              Apply Filters
+            </button>
+          </div>
+
+          <!-- Selected Slot Details -->
+          <div class="bg-white rounded shadow-sm p-6 sticky top-24">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+              Selected Appointment
+            </h3>
+
+            <div class="mb-5">
+              <div class="text-sm text-gray-500">Date & Time</div>
+              <div class="text-xl font-medium text-gray-900 mt-1">
+                Tuesday, Apr 24, 2025
+              </div>
+              <div class="text-lg text-gray-700">10:00 AM - 10:30 AM</div>
+            </div>
+
+            <div class="mb-5">
+              <div class="text-sm text-gray-500">Doctor</div>
+              <div class="flex items-center mt-2">
+                <img
+                  class="h-12 w-12 rounded-full object-cover"
+                  src="https://readdy.ai/api/search-image?query=professional%252520headshot%252520of%252520a%252520middle-aged%252520male%252520doctor%252520with%252520glasses%25252C%252520short%252520dark%252520hair%25252C%252520wearing%252520a%252520white%252520coat%25252C%252520neutral%252520background%25252C%252520high%252520quality%252520portrait%25252C%252520professional%252520lighting&width=200&height=200&seq=doctor1&orientation=squarish"
+                  alt="Dr. Michael Chen"
+                />
+                <div class="ml-3">
+                  <div class="text-md font-medium text-gray-900">
+                    Dr. Michael Chen
+                  </div>
+                  <div class="text-sm text-gray-600">Radiation Oncologist</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-5">
+              <div class="text-sm text-gray-500">Treatment Type</div>
+              <div class="text-md font-medium text-gray-900 mt-1">
+                Radiation Therapy
+              </div>
+              <div class="text-sm text-gray-600">30 minute session</div>
+            </div>
+
+            <div class="mb-5">
+              <div class="text-sm text-gray-500">Location</div>
+              <div class="text-md font-medium text-gray-900 mt-1">
+                Radiation Oncology
+              </div>
+              <div class="text-sm text-gray-600">Floor 3, Room 302</div>
+            </div>
+
+            <div class="mb-6">
+              <div class="text-sm text-gray-500">Equipment</div>
+              <div class="text-md font-medium text-gray-900 mt-1">
+                Linear Accelerator
+              </div>
+              <div class="text-sm text-gray-600">Varian TrueBeam</div>
+            </div>
+
+            <div class="flex flex-col space-y-3">
+              <button
+                class="bg-primary text-white px-4 py-2 rounded-button whitespace-nowrap"
+              >
+                Book Now
+              </button>
+              <a
+                href="https://readdy.ai/home/90c6b7d9-fcf8-40f6-be0d-9b13a7a27409/23bbf480-418e-4b55-b362-bf9869eab570"
+                data-readdy="true"
+                class="text-center border border-gray-300 text-gray-700 px-4 py-2 rounded-button whitespace-nowrap"
+                >Back to Appointments</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Time slot selection
+        const timeSlots = document.querySelectorAll(".time-slot");
+
+        timeSlots.forEach((slot) => {
+          slot.addEventListener("click", function () {
+            // Remove selected class from all slots
+            timeSlots.forEach((s) => s.classList.remove("selected"));
+
+            // Add selected class to clicked slot
+            this.classList.add("selected");
+          });
+        });
+
+        // Filter checkboxes functionality
+        const filterCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+
+        filterCheckboxes.forEach((checkbox) => {
+          checkbox.addEventListener("change", function () {
+            // In a real application, this would filter the displayed slots
+            console.log(`Filter ${this.id} changed to ${this.checked}`);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
